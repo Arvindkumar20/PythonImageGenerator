@@ -1,30 +1,14 @@
-# Ignore Python cache files
+# Ignore Python cache and virtual environments
 __pycache__/
-*.py[cod]
-
-# Ignore virtual environments
 venv/
-env/
+
+# Ignore Node.js dependencies
+node_modules/
 
 # Ignore generated images
 images/
 
-# Ignore model weights (if downloaded manually)
-*.ckpt
-*.safetensors
-
-# Ignore system files
+# Ignore logs and system files
+*.log
 .DS_Store
 Thumbs.db
-
-# Ignore logs and debug files
-logs/
-*.log
-
-# Ignore temporary files
-*.tmp
-*.swp
-*.bak
-
-# Ignore Jupyter Notebook checkpoints (if using Jupyter)
-.ipynb_checkpoints/

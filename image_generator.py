@@ -1,66 +1,55 @@
+import os
+import re
+import sys
 from diffusers import StableDiffusionPipeline
 import torch
-from PIL import Image
-from io import BytesIO
 
-def generate_image(prompt: str):
+# Directory to store generated images
+IMAGE_DIR = "images"
+os.makedirs(IMAGE_DIR, exist_ok=True)
+
+def sanitize_filename(prompt):
+    """Sanitize prompt to create a valid filename."""
+    return re.sub(r'[^a-zA-Z0-9-_ ]', '', prompt).replace(" ", "_") + ".png"
+
+def generate_image(prompt):
     """
-    Generates an image based on the given prompt using Stable Diffusion.
+    Checks if an image for the given prompt already exists.
+    If it exists, return the existing file path.
+    Otherwise, generate a new image, save it, and return the file path.
     
-    Args:
-        prompt (str): The text prompt to generate the image.
-    
-    Returns:
-        Image object: Generated image as a PIL Image.
+    :param prompt: The text description for the image.
+    :return: The saved image path.
     """
-    # Load the Stable Diffusion model
-    pipe = StableDiffusionPipeline.from_pretrained("CompVis/stable-diffusion-v1-4")
-    pipe.to(torch.device("cuda" if torch.cuda.is_available() else "cpu"))
-    
-    # Generate image
-    image = pipe(prompt).images[0]
-    
-    return image
+    try:
+        filename = sanitize_filename(prompt)
+        output_path = os.path.join(IMAGE_DIR, filename)
+
+        # Check if the image already exists
+        if os.path.exists(output_path):
+            print(output_path)  # Return path to Express server
+            return output_path
+
+        # Load Stable Diffusion model
+        pipe = StableDiffusionPipeline.from_pretrained("runwayml/stable-diffusion-v1-5")
+        pipe.to("cuda" if torch.cuda.is_available() else "cpu")
+
+        # Generate image
+        image = pipe(prompt).images[0]
+
+        # Save image
+        image.save(output_path)
+        print(output_path)  # Return path to Express server
+        return output_path
+
+    except Exception as e:
+        print(f"Error: {str(e)}", file=sys.stderr)
+        sys.exit(1)
 
 if __name__ == "__main__":
-    prompt_text = input("Enter your prompt: ")
-    img = generate_image(prompt_text)
-    img.show()  # Display the image
+    if len(sys.argv) < 2:
+        print("Error: No prompt provided", file=sys.stderr)
+        sys.exit(1)
 
-
-# from diffusers import StableDiffusionPipeline
-# import torch
-
-# def generate_image(prompt: str):
-#     """
-#     Generates an image based on the given prompt using an optimized Stable Diffusion pipeline.
-    
-#     Args:
-#         prompt (str): The text prompt to generate the image.
-    
-#     Returns:
-#         PIL.Image.Image: The generated image.
-#     """
-#     # Load the model with optimizations
-#     pipe = StableDiffusionPipeline.from_pretrained(
-#         "stabilityai/stable-diffusion-2-1",
-#         torch_dtype=torch.float16  # Use half-precision for faster inference
-#     )
-    
-#     device = "cuda" if torch.cuda.is_available() else "cpu"
-#     pipe.to(device)
-
-#     # Enable optimizations
-#     pipe.enable_attention_slicing()  # Reduces memory usage
-#     pipe.enable_xformers_memory_efficient_attention()  # Uses faster memory-efficient attention
-#     pipe.vae.enable_tiling()  # Further optimizations for low-memory GPUs
-
-#     # Generate image with reduced steps and optimized size
-#     image = pipe(prompt, num_inference_steps=30, height=512, width=512).images[0]
-    
-#     return image
-
-# if __name__ == "__main__":
-#     prompt_text = input("Enter your prompt: ")
-#     img = generate_image(prompt_text)
-#     img.show()  # Display the image
+    prompt = sys.argv[1]
+    generate_image(prompt)

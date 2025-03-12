@@ -1,5 +1,6 @@
 import os
 import re
+import sys
 from diffusers import StableDiffusionPipeline
 import torch
 
@@ -26,7 +27,7 @@ def generate_image(prompt):
 
         # Check if the image already exists
         if os.path.exists(output_path):
-            print(f"Image already exists: {output_path}")
+            print(output_path)  # Return path to Express server
             return output_path
 
         # Load Stable Diffusion model
@@ -38,14 +39,17 @@ def generate_image(prompt):
 
         # Save image
         image.save(output_path)
-        print(f"Image generated and saved at: {output_path}")
+        print(output_path)  # Return path to Express server
         return output_path
 
     except Exception as e:
-        return f"Error: {str(e)}"
+        print(f"Error: {str(e)}", file=sys.stderr)
+        sys.exit(1)
 
-# Example usage
 if __name__ == "__main__":
-    prompt = input("Enter image prompt: ")
-    image_path = generate_image(prompt)
-    print(f"Image path: {image_path}")
+    if len(sys.argv) < 2:
+        print("Error: No prompt provided", file=sys.stderr)
+        sys.exit(1)
+
+    prompt = sys.argv[1]
+    generate_image(prompt)
